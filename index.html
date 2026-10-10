@@ -230,11 +230,11 @@
       return;
     }
 
-    log('發送給 Gemini (模型: gemini-3.8-flash)...');
+    log('發送給 Gemini (gemini-3.8-flash)...');
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 使用穩定且最新的 gemini-3.8-flash
+    // 調整為支援最新 gemini-3.8-flash 的相容請求結構
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     try {
@@ -242,26 +242,36 @@
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{
-            parts: [{ text: `${systemPrompt}\n使用者指令：${promptText}` }]
-          }]
+          contents: [
+            {
+              role: "user",
+              parts: [{ text: `${systemPrompt}\n\n使用者指令：${promptText}` }]
+            }
+          ]
         })
       });
 
       const data = await response.json();
 
       if (response.ok && data.candidates && data.candidates[0].content) {
-        const resultCmd = data.candidates[0].content.parts[0].text.trim().toUpperCase();
-        log('Gemini 解析成功: ' + resultCmd);
+        const parts = data.candidates[0].content.parts;
+        let resultCmd = "";
+        if (parts && parts[0] && parts[0].text) {
+          resultCmd = parts[0].text.trim().toUpperCase();
+        }
+
+        // 清理可能包在代碼區塊的字元
+        resultCmd = resultCmd.replace(/```/g, "").trim();
+        
+        log('Gemini 解析結果: ' + resultCmd);
         speak('執行 ' + promptText);
         sendToESP32(resultCmd);
       } else {
-        // 印出詳細的伺服器回傳錯誤以供排查
         const errMsg = data.error ? data.error.message : JSON.stringify(data);
-        log(`API 伺服器拒絕 (HTTP ${response.status}): ${errMsg}`);
+        log('API 錯誤: ' + errMsg);
       }
     } catch (error) {
-      log('網路請求失敗 (Fetch Error): ' + error.message);
+      log('請求失敗: ' + error.message);
     }
   }
 </script>
