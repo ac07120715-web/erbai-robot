@@ -1,0 +1,2 @@
+# erbai-robot
+robot new
