@@ -137,7 +137,6 @@
     log('已儲存 Gemini API Key');
   }
 
-  // 頁面載入時讀取預存的 API Key
   window.onload = () => {
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) {
@@ -146,7 +145,6 @@
     }
   };
 
-  // 藍牙連線功能
   async function connectBLE() {
     try {
       log('正在搜尋 ErBai_Robot...');
@@ -175,7 +173,6 @@
     log('藍牙已斷開連線');
   }
 
-  // 發送指令至 ESP32
   async function sendToESP32(cmd) {
     if (!gattCharacteristic) {
       log('警告：藍牙未連線，無法傳送指令給 ESP32');
@@ -190,7 +187,6 @@
     }
   }
 
-  // 語音合成朗讀
   function speak(text) {
     if ('speechSynthesis' in window) {
       const utter = new SpeechSynthesisUtterance(text);
@@ -199,7 +195,6 @@
     }
   }
 
-  // 語音輸入辨識
   function startSpeech() {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
@@ -223,7 +218,6 @@
     };
   }
 
-  // 呼叫 Gemini API 解析指令
   async function sendToGemini() {
     const apiKey = document.getElementById('apiKey').value.trim();
     const promptText = document.getElementById('prompt').value.trim();
@@ -241,8 +235,8 @@
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 使用穩定且支援的 gemini-2.5-flash 模型
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+    // 已將模型更新為最新要求的 gemini-3.8-flash
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(url, {
@@ -262,7 +256,6 @@
         const resultCmd = data.candidates[0].content.parts[0].text.trim().toUpperCase();
         log('Gemini 解析結果: ' + resultCmd);
         
-        // 語音回饋與發送底盤指令
         speak('執行 ' + promptText);
         sendToESP32(resultCmd);
       } else if (data.error) {
