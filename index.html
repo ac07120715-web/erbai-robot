@@ -129,13 +129,12 @@
 
   function saveApiKey() {
     const key = document.getElementById('apiKey').value.trim();
-    if (!key || !key.startsWith('AIzaSy')) {
-      alert('API Key 格式錯誤！必須以 AIzaSy 開頭');
-      log('錯誤：API Key 格式不符');
+    if (!key) {
+      alert('請輸入有效的 Gemini API Key');
       return;
     }
     localStorage.setItem('gemini_api_key', key);
-    log('已成功儲存 Gemini API Key');
+    log('已儲存 Gemini API Key');
   }
 
   window.onload = () => {
@@ -223,8 +222,8 @@
     const apiKey = document.getElementById('apiKey').value.trim();
     const promptText = document.getElementById('prompt').value.trim();
 
-    if (!apiKey || !apiKey.startsWith('AIzaSy')) {
-      alert('請先輸入並儲存正確格式的 Gemini API Key (需以 AIzaSy 開頭)');
+    if (!apiKey) {
+      alert('請先輸入並儲存 Gemini API Key');
       return;
     }
     if (!promptText) {
@@ -236,8 +235,8 @@
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 使用目前正確的 gemini-3.8-flash 模型
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    // 使用支援標準 API Key 驗證的 gemini-2.0-flash 模型，避開新版驗證限制
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(url, {
