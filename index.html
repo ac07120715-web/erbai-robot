@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>奶糖機器人</title>
+    <title>奶糖</title>
     <style>
         * {
             margin: 0;
@@ -153,7 +153,7 @@
 
     <div id="controls">
         <button id="connectBtn">連接奶糖</button>
-        <div id="statusText">請點擊上方按鈕連接機器人</div>
+        <div id="statusText">請點擊上方按鈕連接下半身</div>
     </div>
 
     <div id="log"></div>
@@ -207,7 +207,7 @@
         // ===================== 藍牙 =====================
         connectBtn.addEventListener('click', async () => {
             try {
-                statusText.innerText = "正在搜尋二白...";
+                statusText.innerText = "正在搜尋下半身...";
                 setState('thinking');
 
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
