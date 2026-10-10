@@ -6,83 +6,28 @@
   <title>二白 2WD 機器人 AI 控制中樞</title>
   <style>
     body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
       background-color: #f4f6f9;
       margin: 0;
       padding: 20px;
       color: #333;
     }
-    .container {
-      max-width: 500px;
-      margin: 0 auto;
-    }
-    h1 {
-      text-align: center;
-      font-size: 1.5rem;
-      margin-bottom: 20px;
-    }
-    .card {
-      background: white;
-      padding: 20px;
-      border-radius: 12px;
-      margin-bottom: 16px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-    }
-    .card h3 {
-      margin-top: 0;
-      margin-bottom: 12px;
-      font-size: 1.1rem;
-    }
-    input[type="password"], textarea {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      box-sizing: border-box;
-      font-size: 14px;
-      margin-bottom: 10px;
-    }
-    textarea {
-      height: 80px;
-      resize: vertical;
-    }
-    button {
-      width: 100%;
-      padding: 12px;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      font-weight: bold;
-      cursor: pointer;
-      margin-bottom: 8px;
-      transition: background 0.2s;
-    }
-    .btn-primary { background-color: #007bff; color: white; }
-    .btn-primary:hover { background-color: #0056b3; }
-    .btn-success { background-color: #28a745; color: white; }
-    .btn-success:hover { background-color: #218838; }
-    .status-text {
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    #log {
-      background: #1e1e1e;
-      color: #39ff14;
-      padding: 12px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 12px;
-      height: 180px;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-    }
+    .container { max-width: 500px; margin: 0 auto; }
+    h1 { text-align: center; font-size: 1.5rem; }
+    .card { background: white; padding: 20px; border-radius: 12px; margin-bottom: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .card h3 { margin-top: 0; }
+    input[type="password"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; margin-bottom: 10px; }
+    textarea { height: 80px; resize: vertical; }
+    button { width: 100%; padding: 12px; border: none; border-radius: 8px; font-size: 15px; font-weight: bold; cursor: pointer; margin-bottom: 8px; color: white; }
+    .btn-primary { background-color: #007bff; }
+    .btn-success { background-color: #28a745; }
+    #log { background: #1e1e1e; color: #39ff14; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; height: 150px; overflow-y: auto; white-space: pre-wrap; }
   </style>
 </head>
 <body>
 
 <div class="container">
-  <h1>🤖 二白 2WD 機器人控制面板</h1>
+  <h1>🤖 二白 2WD 控制面板</h1>
 
   <div class="card">
     <h3>1. 設定 Gemini API Key</h3>
@@ -92,20 +37,19 @@
 
   <div class="card">
     <h3>2. 藍牙連線</h3>
-    <div class="status-text">狀態：<span id="bleStatus" style="color: red;">未連線 ❌</span></div>
-    <button class="btn-primary" onclick="connectBLE()">連接二白底盤 (Bluetooth)</button>
+    <p>狀態：<span id="bleStatus" style="color: red;">未連線 ❌</span></p>
+    <button class="btn-primary" onclick="connectBLE()">連接二白底盤</button>
   </div>
 
   <div class="card">
     <h3>3. AI 語音 / 文字指令</h3>
-    <textarea id="prompt" placeholder="輸入或說出指令，例如：向前走、左轉、停止..."></textarea>
+    <textarea id="prompt" placeholder="例如：向前走、左轉、停止..."></textarea>
     <button class="btn-primary" onclick="sendToGemini()">傳送給 Gemini 解析</button>
-    <button class="btn-success" onclick="startSpeech()">🎤 語音輸入</button>
   </div>
 
   <div class="card">
-    <h3>系統狀態日誌</h3>
-    <div id="log">系統就緒，等待操作...</div>
+    <h3>系統日誌</h3>
+    <div id="log">系統就緒...</div>
   </div>
 </div>
 
@@ -120,36 +64,38 @@
     const logDiv = document.getElementById('log');
     logDiv.innerHTML += '<br>> ' + text;
     logDiv.scrollTop = logDiv.scrollHeight;
-    console.log(text);
   }
 
   function saveApiKey() {
     const key = document.getElementById('apiKey').value.trim();
     if (!key) {
-      alert('請輸入有效的 Gemini API Key');
+      alert('請輸入金鑰');
       return;
     }
     localStorage.setItem('gemini_api_key', key);
-    log('已儲存 Gemini API Key');
+    log('已儲存 API Key');
   }
 
   window.onload = function() {
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) {
       document.getElementById('apiKey').value = savedKey;
-      log('已自動載入預存的 API Key');
+      log('已自動載入 API Key');
     }
   };
 
   async function connectBLE() {
     try {
-      log('正在搜尋 ErBai_Robot...');
+      log('正在搜尋藍牙裝置...');
       bluetoothDevice = await navigator.bluetooth.requestDevice({
         filters: [{ name: 'ErBai_Robot' }],
         optionalServices: [SERVICE_UUID]
       });
-
-      bluetoothDevice.addEventListener('gattserverdisconnected', onDisconnected);
+      bluetoothDevice.addEventListener('gattserverdisconnected', function() {
+        document.getElementById('bleStatus').innerHTML = '未連線 ❌';
+        document.getElementById('bleStatus').style.color = 'red';
+        log('藍牙已斷開');
+      });
 
       const server = await bluetoothDevice.gatt.connect();
       const service = await server.getPrimaryService(SERVICE_UUID);
@@ -157,61 +103,24 @@
 
       document.getElementById('bleStatus').innerHTML = '已連線 ✅';
       document.getElementById('bleStatus').style.color = 'green';
-      log('藍牙成功連線至 ErBai_Robot！');
+      log('藍牙連線成功！');
     } catch (error) {
       log('藍牙連線失敗: ' + error);
     }
   }
 
-  function onDisconnected() {
-    document.getElementById('bleStatus').innerHTML = '未連線 ❌';
-    document.getElementById('bleStatus').style.color = 'red';
-    log('藍牙已斷開連線');
-  }
-
   async function sendToESP32(cmd) {
     if (!gattCharacteristic) {
-      log('警告：藍牙未連線，無法傳送指令給 ESP32');
+      log('藍牙未連線');
       return;
     }
     try {
       const encoder = new TextEncoder();
       await gattCharacteristic.writeValue(encoder.encode(cmd));
-      log('已傳送指令給 ESP32: ' + cmd);
+      log('已發送指令至 ESP32: ' + cmd);
     } catch (error) {
-      log('傳送至 ESP32 失敗: ' + error);
+      log('發送失敗: ' + error);
     }
-  }
-
-  function speak(text) {
-    if ('speechSynthesis' in window) {
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'zh-TW';
-      window.speechSynthesis.speak(utter);
-    }
-  }
-
-  function startSpeech() {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognition) {
-      alert('您的瀏覽器不支援語音辨識');
-      return;
-    }
-    const recognition = new SpeechRecognition();
-    recognition.lang = 'zh-TW';
-    recognition.start();
-    log('正在聆聽語音...');
-
-    recognition.onresult = function(event) {
-      const text = event.results[0][0].transcript;
-      document.getElementById('prompt').value = text;
-      log('語音辨識結果: "' + text + '"');
-      sendToGemini();
-    };
-
-    recognition.onerror = function(event) {
-      log('語音辨識錯誤: ' + event.error);
-    };
   }
 
   async function sendToGemini() {
@@ -219,18 +128,16 @@
     const promptText = document.getElementById('prompt').value.trim();
 
     if (!apiKey) {
-      alert('請先輸入並儲存 Gemini API Key');
+      alert('請先輸入 API Key');
       return;
     }
     if (!promptText) {
-      alert('請輸入或說出指令');
+      alert('請輸入指令');
       return;
     }
 
-    log('發送給 Gemini (gemini-3.8-flash)...');
-
-    const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
-
+    log('發送給 Gemini...');
+    const systemPrompt = "你是一個 2WD 機器人控制解析器。請將自然語言轉換為代碼。只輸出以下字元之一：MOVE_F, MOVE_B, TURN_L, TURN_R, STOP。不要包含額外文字。";
     const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey;
 
     try {
@@ -245,22 +152,19 @@
       });
 
       const data = await response.json();
-      console.log('API Full Response:', data);
-
       if (response.ok && data.candidates && data.candidates[0].content) {
         const parts = data.candidates[0].content.parts;
         let resultCmd = (parts && parts[0] && parts[0].text) ? parts[0].text.trim().toUpperCase() : "";
         resultCmd = resultCmd.replace(/```[a-z]*\n?/g, "").replace(/```/g, "").trim();
         
-        log('Gemini 解析結果: ' + resultCmd);
-        speak('執行 ' + promptText);
+        log('解析結果: ' + resultCmd);
         sendToESP32(resultCmd);
       } else {
         const errMsg = data.error ? data.error.message : JSON.stringify(data);
-        log('API 錯誤 (HTTP ' + response.status + '): ' + errMsg);
+        log('API 錯誤: ' + errMsg);
       }
     } catch (error) {
-      log('網路請求例外錯誤: ' + error.message);
+      log('網路請求錯誤: ' + error.message);
     }
   }
 </script>
