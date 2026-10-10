@@ -84,21 +84,18 @@
 <div class="container">
   <h1>🤖 二白 2WD 機器人控制面板</h1>
 
-  <!-- 1. API Key 設定 -->
   <div class="card">
     <h3>1. 設定 Gemini API Key</h3>
     <input type="password" id="apiKey" placeholder="請貼上 AIzaSy... 開頭的金鑰">
     <button class="btn-primary" onclick="saveApiKey()">儲存 API Key</button>
   </div>
 
-  <!-- 2. 藍牙連線 -->
   <div class="card">
     <h3>2. 藍牙連線</h3>
     <div class="status-text">狀態：<span id="bleStatus" style="color: red;">未連線 ❌</span></div>
     <button class="btn-primary" onclick="connectBLE()">連接二白底盤 (Bluetooth)</button>
   </div>
 
-  <!-- 3. AI 語音 / 文字指令 -->
   <div class="card">
     <h3>3. AI 語音 / 文字指令</h3>
     <textarea id="prompt" placeholder="輸入或說出指令，例如：向前走、左轉、停止..."></textarea>
@@ -106,7 +103,6 @@
     <button class="btn-success" onclick="startSpeech()">🎤 語音輸入</button>
   </div>
 
-  <!-- 4. 系統日誌 -->
   <div class="card">
     <h3>系統狀態日誌</h3>
     <div id="log">系統就緒，等待操作...</div>
@@ -124,6 +120,7 @@
     const logDiv = document.getElementById('log');
     logDiv.innerHTML += '<br>> ' + text;
     logDiv.scrollTop = logDiv.scrollHeight;
+    console.log(text);
   }
 
   function saveApiKey() {
@@ -136,7 +133,7 @@
     log('已儲存 Gemini API Key');
   }
 
-  window.onload = () => {
+  window.onload = function() {
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) {
       document.getElementById('apiKey').value = savedKey;
@@ -159,7 +156,7 @@
       gattCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
       document.getElementById('bleStatus').innerHTML = '已連線 ✅';
-      document.getElementById('bleStatus'].style.color = 'green';
+      document.getElementById('bleStatus').style.color = 'green';
       log('藍牙成功連線至 ErBai_Robot！');
     } catch (error) {
       log('藍牙連線失敗: ' + error);
@@ -168,7 +165,7 @@
 
   function onDisconnected() {
     document.getElementById('bleStatus').innerHTML = '未連線 ❌';
-    document.getElementById('bleStatus'].style.color = 'red';
+    document.getElementById('bleStatus').style.color = 'red';
     log('藍牙已斷開連線');
   }
 
@@ -205,14 +202,14 @@
     recognition.start();
     log('正在聆聽語音...');
 
-    recognition.onresult = (event) => {
+    recognition.onresult = function(event) {
       const text = event.results[0][0].transcript;
       document.getElementById('prompt').value = text;
       log('語音辨識結果: "' + text + '"');
       sendToGemini();
     };
 
-    recognition.onerror = (event) => {
+    recognition.onerror = function(event) {
       log('語音辨識錯誤: ' + event.error);
     };
   }
@@ -234,44 +231,36 @@
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 調整為支援最新 gemini-3.8-flash 的相容請求結構
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
+    const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=" + apiKey;
 
     try {
       const response = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `${systemPrompt}\n\n使用者指令：${promptText}` }]
-            }
-          ]
+          contents: [{
+            parts: [{ text: systemPrompt + "\n\n使用者指令：" + promptText }]
+          }]
         })
       });
 
       const data = await response.json();
+      console.log('API Full Response:', data);
 
       if (response.ok && data.candidates && data.candidates[0].content) {
         const parts = data.candidates[0].content.parts;
-        let resultCmd = "";
-        if (parts && parts[0] && parts[0].text) {
-          resultCmd = parts[0].text.trim().toUpperCase();
-        }
-
-        // 清理可能包在代碼區塊的字元
-        resultCmd = resultCmd.replace(/```/g, "").trim();
+        let resultCmd = (parts && parts[0] && parts[0].text) ? parts[0].text.trim().toUpperCase() : "";
+        resultCmd = resultCmd.replace(/```[a-z]*\n?/g, "").replace(/```/g, "").trim();
         
         log('Gemini 解析結果: ' + resultCmd);
         speak('執行 ' + promptText);
         sendToESP32(resultCmd);
       } else {
         const errMsg = data.error ? data.error.message : JSON.stringify(data);
-        log('API 錯誤: ' + errMsg);
+        log('API 錯誤 (HTTP ' + response.status + '): ' + errMsg);
       }
     } catch (error) {
-      log('請求失敗: ' + error.message);
+      log('網路請求例外錯誤: ' + error.message);
     }
   }
 </script>
