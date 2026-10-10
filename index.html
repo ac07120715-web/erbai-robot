@@ -114,7 +114,6 @@
 </div>
 
 <script>
-  // BLE UUIDs (必須與 ESP32 韌體設定相同)
   const SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
   const CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
 
@@ -235,8 +234,8 @@
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 使用支援標準 API Key 驗證的 gemini-2.0-flash 模型，避開新版驗證限制
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    // 更新為 gemini-3.8-flash 的標準 chat/completions 或 generateContent 請求格式
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     try {
       const response = await fetch(url, {
@@ -244,7 +243,6 @@
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents: [{
-            role: 'user',
             parts: [{ text: `${systemPrompt}\n使用者指令：${promptText}` }]
           }]
         })
@@ -252,7 +250,7 @@
 
       const data = await response.json();
 
-      if (data.candidates && data.candidates[0].content) {
+      if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
         const resultCmd = data.candidates[0].content.parts[0].text.trim().toUpperCase();
         log('Gemini 解析結果: ' + resultCmd);
         
