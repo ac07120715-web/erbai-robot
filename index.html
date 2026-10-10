@@ -234,7 +234,7 @@
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 更新為 gemini-3.8-flash 的標準 chat/completions 或 generateContent 請求格式
+    // 強制使用 gemini-3.8-flash 模型路徑
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     try {
