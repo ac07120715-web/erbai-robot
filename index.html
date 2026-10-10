@@ -72,7 +72,7 @@
       border-radius: 8px;
       font-family: monospace;
       font-size: 12px;
-      height: 150px;
+      height: 180px;
       overflow-y: auto;
       white-space: pre-wrap;
       word-break: break-all;
@@ -159,7 +159,7 @@
       gattCharacteristic = await service.getCharacteristic(CHARACTERISTIC_UUID);
 
       document.getElementById('bleStatus').innerHTML = '已連線 ✅';
-      document.getElementById('bleStatus').style.color = 'green';
+      document.getElementById('bleStatus'].style.color = 'green';
       log('藍牙成功連線至 ErBai_Robot！');
     } catch (error) {
       log('藍牙連線失敗: ' + error);
@@ -168,7 +168,7 @@
 
   function onDisconnected() {
     document.getElementById('bleStatus').innerHTML = '未連線 ❌';
-    document.getElementById('bleStatus').style.color = 'red';
+    document.getElementById('bleStatus'].style.color = 'red';
     log('藍牙已斷開連線');
   }
 
@@ -230,11 +230,11 @@
       return;
     }
 
-    log('發送給 Gemini: "' + promptText + '"');
+    log('發送給 Gemini (模型: gemini-3.8-flash)...');
 
     const systemPrompt = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為底盤控制代碼。只輸出以下字元之一：MOVE_F (前進), MOVE_B (後退), TURN_L (左轉), TURN_R (右轉), STOP (停止)。不要包含任何額外文字或符號。";
 
-    // 強制使用 gemini-3.8-flash 模型路徑
+    // 使用穩定且最新的 gemini-3.8-flash
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key=${apiKey}`;
 
     try {
@@ -250,19 +250,18 @@
 
       const data = await response.json();
 
-      if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+      if (response.ok && data.candidates && data.candidates[0].content) {
         const resultCmd = data.candidates[0].content.parts[0].text.trim().toUpperCase();
-        log('Gemini 解析結果: ' + resultCmd);
-        
+        log('Gemini 解析成功: ' + resultCmd);
         speak('執行 ' + promptText);
         sendToESP32(resultCmd);
-      } else if (data.error) {
-        log('API 錯誤: ' + data.error.message);
       } else {
-        log('API 回應異常: 未能獲取解析內容');
+        // 印出詳細的伺服器回傳錯誤以供排查
+        const errMsg = data.error ? data.error.message : JSON.stringify(data);
+        log(`API 伺服器拒絕 (HTTP ${response.status}): ${errMsg}`);
       }
     } catch (error) {
-      log('請求 Gemini 失敗: ' + error);
+      log('網路請求失敗 (Fetch Error): ' + error.message);
     }
   }
 </script>
