@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ErBai Robot 控制面板</title>
+    <title>ErBai 機器人控制面板</title>
     <style>
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; text-align: center; background: #f4f6f9; margin: 0; padding: 20px; color: #333; }
         h1 { margin-bottom: 20px; font-size: 24px; }
@@ -50,9 +50,8 @@
     </div>
 
     <script>
-        // ESP32 藍牙 UUID 設定[cite: 2]
-        const BLE_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";[cite: 2]
-        const BLE_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26aae";[cite: 2]
+        const BLE_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+        const BLE_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26aae";
 
         let bluetoothDevice = null;
         let bluetoothCharacteristic = null;
@@ -66,7 +65,7 @@
         const micBtn = document.getElementById('micBtn');
         const userInputEl = document.getElementById('userInput');
 
-        // 自動載入上次儲存的 API Key
+        // 載入已儲存的 Key
         const savedKey = localStorage.getItem('GEMINI_API_KEY');
         if (savedKey) {
             apiKeyInput.value = savedKey;
@@ -76,7 +75,7 @@
             const key = apiKeyInput.value.trim();
             if (key) {
                 localStorage.setItem('GEMINI_API_KEY', key);
-                alert("API Key 已成功儲存於此瀏覽器！");
+                alert("API Key 已成功儲存！");
                 log("已儲存 Gemini API Key");
             } else {
                 alert("請輸入有效的 API Key");
@@ -88,92 +87,83 @@
             logEl.scrollTop = logEl.scrollHeight;
         }
 
-        // 1. Web Bluetooth 連線邏輯[cite: 1, 2]
+        // 藍牙連線
         connectBtn.addEventListener('click', async () => {
             try {
-                log("正在搜尋 ErBai_Robot 藍牙裝置...");[cite: 1]
+                log("正在搜尋 ErBai_Robot...");
                 bluetoothDevice = await navigator.bluetooth.requestDevice({
-                    filters: [{ name: 'ErBai_Robot' }],[cite: 1]
-                    optionalServices: [BLE_SERVICE_UUID][cite: 2]
+                    filters: [{ name: 'ErBai_Robot' }],
+                    optionalServices: [BLE_SERVICE_UUID]
                 });
 
-                log(`已選取裝置: ${bluetoothDevice.name}`);
-                log("正在建立 GATT 連線...");
+                log(`已選取: ${bluetoothDevice.name}`);
                 const server = await bluetoothDevice.gatt.connect();
-                const service = await server.getPrimaryService(BLE_SERVICE_UUID);[cite: 2]
-                bluetoothCharacteristic = await service.getCharacteristic(BLE_CHARACTERISTIC_UUID);[cite: 2]
+                const service = await server.getPrimaryService(BLE_SERVICE_UUID);
+                bluetoothCharacteristic = await service.getCharacteristic(BLE_CHARACTERISTIC_UUID);
 
                 statusEl.innerText = "狀態：已連線 ✅";
                 statusEl.style.color = "#28a745";
-                log("藍牙連線成功！可以發送指令了。");
+                log("藍牙連線成功！");
             } catch (error) {
                 log(`藍牙連線失敗: ${error}`);
-                alert("藍牙連線失敗：請確認手機 GPS 定位已開啟，且 Chrome 已獲取附近裝置權限。");
+                alert("藍牙連線失敗：請確認手機 GPS 定位已開啟。");
             }
         });
 
-        // 2. 發送控制指令給 ESP32[cite: 1, 2]
+        // 傳送指令至 ESP32
         async function sendCommandToESP32(command) {
             if (!bluetoothCharacteristic) {
-                alert("請先點擊「連接二白底盤」按鈕連接藍牙！");
+                alert("請先連線藍牙！");
                 return;
             }
             try {
                 const encoder = new TextEncoder();
                 await bluetoothCharacteristic.writeValue(encoder.encode(command));
-                log(`已傳送底盤指令: [${command}]`);
+                log(`已傳送指令: [${command}]`);
             } catch (error) {
-                log(`發送指令失敗: ${error}`);
+                log(`發送失敗: ${error}`);
             }
         }
 
-        // 3. 呼叫 Gemini 1.5 Flash 解析指令[cite: 1]
+        // 呼叫 Gemini 1.5 Flash
         async function askGemini(promptText) {
             const apiKey = apiKeyInput.value.trim();
             if (!apiKey) {
-                alert("請先在步驟 1 輸入並儲存您的 Gemini API Key！");
+                alert("請先輸入並儲存 API Key！");
                 return;
             }
 
-            log(`發送 prompt 給 Gemini: "${promptText}"`);
-            
-            const systemInstruction = "你是一個 2WD 機器人控制解析器。請將使用者的自然語言轉換為最適合的控制指令代碼。你只能輸出以下其中一個英文字母代碼，不要輸出其他多餘的字元：FORWARD (向前), BACKWARD (向後), LEFT (左轉), RIGHT (右轉), STOP (停止)。";
-            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;[cite: 1]
+            log(`發送給 Gemini: "${promptText}"`);
+            const systemInstruction = "你是一個 2WD 機器人控制解析器。請將使用者的語言轉換為指令，且你只能輸出以下其中一個英文字母代碼，不要輸出其他字元：FORWARD, BACKWARD, LEFT, RIGHT, STOP。";
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
             
             try {
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
-                        contents: [
-                            { role: "user", parts: [{ text: systemInstruction + "\n使用者指令：" + promptText }] }
-                        ]
+                        contents: [{ role: "user", parts: [{ text: systemInstruction + "\n使用者指令：" + promptText }] }]
                     })
                 });
 
                 const data = await response.json();
-                
                 if (data.error) {
                     log(`API 錯誤: ${data.error.message}`);
-                    alert(`Gemini API 錯誤: ${data.error.message}`);
                     return;
                 }
 
                 if (data.candidates && data.candidates.length > 0) {
                     const aiResult = data.candidates[0].content.parts[0].text.trim().toUpperCase();
-                    log(`Gemini 解析結果: ${aiResult}`);
+                    log(`Gemini 解析: ${aiResult}`);
                     
                     if (aiResult.includes("FORWARD")) sendCommandToESP32("MOVE_F");
                     else if (aiResult.includes("BACKWARD")) sendCommandToESP32("MOVE_B");
                     else if (aiResult.includes("LEFT")) sendCommandToESP32("TURN_L");
                     else if (aiResult.includes("RIGHT")) sendCommandToESP32("TURN_R");
                     else sendCommandToESP32("STOP");
-                } else {
-                    log("Gemini 未能傳回有效結果");
                 }
             } catch (error) {
-                log(`網路/API 請求失敗: ${error}`);
-                alert("API 請求失敗，請檢查手機網路連線。");
+                log(`網路請求失敗: ${error}`);
             }
         }
 
@@ -182,11 +172,11 @@
             if (text) askGemini(text);
         });
 
-        // 4. Web Speech API 語音輸入[cite: 1]
+        // 語音輸入
         micBtn.addEventListener('click', () => {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
-                alert("此瀏覽器不支援語音辨識，請使用文字輸入。");
+                alert("此瀏覽器不支援語音辨識");
                 return;
             }
             const recognition = new SpeechRecognition();
@@ -195,14 +185,14 @@
             log("正在聆聽語音...");
 
             recognition.onresult = (event) => {
-                const speechToText = event.results[0][0].transcript;
-                userInputEl.value = speechToText;
-                log(`語音辨識結果: ${speechToText}`);
-                askGemini(speechToText);
+                const text = event.results[0][0].transcript;
+                userInputEl.value = text;
+                log(`語音辨識: ${text}`);
+                askGemini(text);
             };
 
             recognition.onerror = (event) => {
-                log(`語音辨識錯誤: ${event.error}`);
+                log(`語音錯誤: ${event.error}`);
             };
         });
     </script>
